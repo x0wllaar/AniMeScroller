@@ -31,11 +31,16 @@ def main():
                         required=False,
                         type=int,
                         default=40)
-    parser.add_argument("--scrollspeed",
-                        help="Speed (in pixels per second), with which to scroll",
+    parser.add_argument("--scrollspeedp",
+                        help="Scroll speed in pixels per second",
                         required=False,
                         type=int,
-                        default=48)
+                        default=-1)
+    parser.add_argument("--scrollspeedc",
+                        help="Scroll speed in characters per second",
+                        required=False,
+                        type=int,
+                        default=6)
     parser.add_argument("--scrolltime",
                         help="Time (in seconds) for which to scroll the text",
                         required=False,
@@ -63,10 +68,10 @@ def main():
                         default=0)
     args = parser.parse_args()
 
-    if args.scrollspeed < 0 and args.scrolltime < 0:
-        die("Either scroll speed or scroll time should be set to a value >0")
-    if args.scrollspeed > 0 and args.scrolltime > 0:
-        die("Only one of scroll time or scroll speed can be set to value >0")
+    if args.scrollspeedp < 0 and args.scrolltime < 0 and args.scrollspeedc < 0:
+        die("Either scroll speed in pixels / characters or scroll time should be set to a value >0")
+    if int(args.scrollspeedp > 0) + int(args.scrolltime > 0) + int(args.scrollspeedc > 0) > 1:
+        die("Only one of scroll time or scroll speed in pixels / characters can be set to value >0")
 
     if args.windowwidthp < 0 and args.windowwidthc < 0:
         die("Either window width in pixels or in characters should be set to a value >0")
@@ -115,9 +120,12 @@ def main():
     if args.scrolltime > 0:
         gif_time = args.scrolltime
         gif_speed = (text_width + gif_width) / args.scrolltime
-    elif args.scrollspeed > 0:
+    elif args.scrollspeedp > 0:
         gif_time = (text_width + gif_width) / args.scrollspeed
         gif_speed = args.scrollspeed
+    elif args.scrollspeedc > 0:
+        gif_speed = args.scrollspeedc * text_width / len(args.text)
+        gif_time = (text_width + gif_width) / gif_speed
     else:
         die("Impossible combination of time/speed args")
     gif_time += args.delayafter
@@ -134,8 +142,6 @@ def main():
         f"drawtext='{args.font}':fontsize={args.fontsize}:text='{args.text}':y={args.vmarginsize}:x=w-t*{gif_speed}:fontcolor=white",
         args.output
     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-
-
 
 
 if __name__ == "__main__":
