@@ -29,3 +29,5 @@ And then sending this image to the matrix
 
 ===TODO===
 * Add the ability to reverse scrolling direction for e.g. Hebrew texts
+* Add a separate "server" that can process incoming GIFs and automatically
+  run asusctl to show them
