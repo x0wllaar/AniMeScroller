@@ -1,0 +1,31 @@
+====ANIMESCROLLER====
+
+A very simple Python script that allows to make simple text scrolling animations
+that can be then played back on the AniMe Matrix of ASUS ROG Zephyrus laptops
+via asusctl (https://gitlab.com/asus-linux/asusctl) on Linux
+
+===DEPENDENCIES===
+1. Python 3
+2. ffmpeg in PATH
+3. asusctl for playback
+
+
+===INSTALLATION===
+Simply clone this repository
+
+
+===USAGE===
+1. Generate a GIF animation of your text with
+   $ ./generate_gif.py -t "Lorem Ipsum" -o scroll.gif
+2. Play the generated GIF on the AniMe Matrix
+   $ asusctl anime gif -p scroll.gif -l 0
+
+If the image persists when you stop playback with Ctrl+C, you can reset the
+matrix to the off state by first generating a solid black image:
+   $ ffmpeg -t 10 -f lavfi -i color=c=black:s=100x50 -frames:v 1 blank.png
+And then sending this image to the matrix
+   $ asusctl anime image -p blank.png
+
+
+===TODO===
+* Add the ability to reverse scrolling direction for e.g. Hebrew texts
