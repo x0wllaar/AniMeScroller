@@ -91,6 +91,9 @@ def main():
         "-vframes", "1",
         "-f", "null", "-"
     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if height_process.returncode != 0:
+        die("FFmpeg error when getting height, code",
+            height_process.returncode)
     text_height = float(height_process.stderr.decode("utf-8").strip())
 
     # Get text width for current font size with FFmpeg magic
@@ -106,6 +109,9 @@ def main():
         "-vframes", "1",
         "-f", "null", "-"
     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if width_process.returncode != 0:
+        die("FFmpeg error when getting width, code",
+            width_process.returncode)
     text_width = float(width_process.stderr.decode("utf-8").strip())
 
     gif_height = 2 * args.vmarginsize + math.ceil(text_height)
@@ -133,15 +139,17 @@ def main():
     gif_process = subprocess.run([
         "ffmpeg",
         "-y",
-        "-v", "24",
         "-t", str(gif_time),
-        "-hide_banner",
         "-f", "lavfi",
         "-i", f"color=c=black:s={gif_width}x{gif_height}:r=25/1",
         "-vf",
         f"drawtext='{args.font}':fontsize={args.fontsize}:text='{args.text}':y={args.vmarginsize}:x=w-t*{gif_speed}:fontcolor=white",
         args.output
     ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if gif_process.returncode != 0:
+        die("FFmpeg exited with error status", gif_process.returncode,
+            "when creating GIF,",
+            "FFmpeg output:", gif_process.stderr.decode("utf-8").strip())
 
 
 if __name__ == "__main__":
