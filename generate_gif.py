@@ -10,15 +10,11 @@ import pickle
 
 import zmq
 
-from utils import GifData, PICKLE_PROTOCOL_VERSION
+from utils import GifData, PICKLE_PROTOCOL_VERSION, die
 
 DEFAULT_FONT_NAME = "./NotoSansMono-SemiBold.ttf"
 # This is a cluge to refer to files relative to the script
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-
-def die(*args, **kwargs):
-    print("ERROR:", *args, file=sys.stderr, **kwargs)
-    exit(1)
 
 # Get text height or width for current font size with FFmpeg magic
 # https://stackoverflow.com/a/63448868
