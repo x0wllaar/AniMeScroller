@@ -43,7 +43,7 @@ def get_text_size_info(info_type:str, text:str, font:str, fontsize:int) -> float
 
 def generate_gif(gif_width:int, gif_height:int, gif_time:float, 
                  gif_speed:float, text:str, font:str, fontsize:int,
-                 vmarginsize:int, output:str):
+                 vmarginsize:int) -> bytes:
     with tempfile.NamedTemporaryFile(mode="w", delete=True) as textf:
         print(text, end='', sep='', file=textf)
         textf.flush()
@@ -55,11 +55,13 @@ def generate_gif(gif_width:int, gif_height:int, gif_time:float,
             "-i", f"color=c=black:s={gif_width}x{gif_height}:r=25/1",
             "-vf",
             f"drawtext='{font}':fontsize={fontsize}:textfile='{textf.name}':y={vmarginsize}:x=w-t*{gif_speed}:fontcolor=white",
-            output
+            "-f", "gif",
+            "-"
         ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         if gif_process.returncode != 0:
             raise RuntimeError(f"FFmpeg exited with error status {gif_process.returncode} when creating GIF" + 
                 f"FFmpeg output:" + gif_process.stderr.decode("utf-8").strip())
+        return gif_process.stdout
 
 def main():
     parser = argparse.ArgumentParser()
@@ -168,7 +170,7 @@ def main():
         die("Impossible combination of time/speed args")
     gif_time += args.delayafter
 
-    generate_gif(
+    gif_bytes = generate_gif(
         gif_width=gif_width,
         gif_height=gif_height,
         gif_time=gif_time,
@@ -177,8 +179,9 @@ def main():
         font=args.font,
         fontsize=args.fontsize,
         vmarginsize=args.vmarginsize,
-        output=args.output
     )
+    with open(args.output, "wb") as giff:
+        giff.write(gif_bytes)
 
 
 if __name__ == "__main__":
