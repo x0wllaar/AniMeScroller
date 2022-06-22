@@ -69,9 +69,9 @@ def main():
     srcg.add_argument("-t", "--text",
                         help="Text to scroll")
     srcg.add_argument("--textfile",
-                        help="File from which to get the text to scroll")
+                        help="File from which to get the text to scroll (pass - to read from stdin)")
     parser.add_argument("-o", "--output",
-                        help="Name of the output file",
+                        help="Name of the output file (pass - to write to stdout)",
                         required=True)
     parser.add_argument("--font",
                         help="Font to use",
