@@ -180,8 +180,11 @@ def main():
         fontsize=args.fontsize,
         vmarginsize=args.vmarginsize,
     )
-    with open(args.output, "wb") as giff:
-        giff.write(gif_bytes)
+    if args.output == "-":
+        sys.stdout.buffer.write(gif_bytes)
+    else:
+        with open(args.output, "wb") as giff:
+            giff.write(gif_bytes)
 
 
 if __name__ == "__main__":
