@@ -41,6 +41,7 @@ def get_text_size_info(info_type:str, text:str, font:str, fontsize:int) -> float
         text_info = float(info_process.stderr.decode("utf-8").strip())
         return text_info
 
+
 def generate_gif(gif_width:int, gif_height:int, gif_time:float, 
                  gif_speed:float, text:str, font:str, fontsize:int,
                  vmarginsize:int) -> bytes:
@@ -62,6 +63,7 @@ def generate_gif(gif_width:int, gif_height:int, gif_time:float,
             raise RuntimeError(f"FFmpeg exited with error status {gif_process.returncode} when creating GIF" + 
                 f"FFmpeg output:" + gif_process.stderr.decode("utf-8").strip())
         return gif_process.stdout
+
 
 def main():
     parser = argparse.ArgumentParser()
