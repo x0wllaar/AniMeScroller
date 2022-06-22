@@ -63,9 +63,11 @@ def generate_gif(gif_width:int, gif_height:int, gif_time:float,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--text",
-                        help="Text to scroll",
-                        required=True)
+    srcg = parser.add_mutually_exclusive_group(required=True)
+    srcg.add_argument("-t", "--text",
+                        help="Text to scroll")
+    srcg.add_argument("--textfile",
+                        help="File from which to get the text to scroll")
     parser.add_argument("-o", "--output",
                         help="Name of the output file",
                         required=True)
@@ -114,6 +116,13 @@ def main():
                         default=0)
     args = parser.parse_args()
 
+    if args.text is not None:
+        gif_text = args.text
+    if args.textfile is not None:
+        with open(args.textfile, "r", encoding="utf-8") as tf:
+            gif_text = tf.read()
+    gif_text = " ".join(gif_text.split("\n")).strip()
+
     if args.scrollspeed <= 0:
         die("Cannot set scroll speed or time to be less or equal to zero")
     if args.windowwidth <= 0:
@@ -122,14 +131,14 @@ def main():
 
     text_height = get_text_size_info(
         info_type="height",
-        text=args.text,
+        text=gif_text,
         font=args.font,
         fontsize=args.fontsize
     )
 
     text_width = get_text_size_info(
         info_type="width",
-        text=args.text,
+        text=gif_text,
         font=args.font,
         fontsize=args.fontsize
     )
@@ -138,7 +147,7 @@ def main():
     if args.windowwidthunit == "pixel":
         gif_width = args.windowwidth
     elif args.windowwidthunit == "character":
-        gif_width = args.windowwidth * text_width / len(args.text)
+        gif_width = args.windowwidth * text_width / len(gif_text)
         gif_width = math.ceil(gif_width)
     else:
         die("Impossible combination of width args")
@@ -150,7 +159,7 @@ def main():
         gif_time = (text_width + gif_width) / args.scrollspeed
         gif_speed = args.scrollspeed
     elif args.scrollspeedtype == "charpersecond":
-        gif_speed = args.scrollspeed * text_width / len(args.text)
+        gif_speed = args.scrollspeed * text_width / len(gif_text)
         gif_time = (text_width + gif_width) / gif_speed
     else:
         die("Impossible combination of time/speed args")
@@ -161,7 +170,7 @@ def main():
         gif_height=gif_height,
         gif_time=gif_time,
         gif_speed=gif_speed,
-        text=args.text,
+        text=gif_text,
         font=args.font,
         fontsize=args.fontsize,
         vmarginsize=args.vmarginsize,
