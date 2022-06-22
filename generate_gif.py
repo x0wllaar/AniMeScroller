@@ -119,8 +119,11 @@ def main():
     if args.text is not None:
         gif_text = args.text
     if args.textfile is not None:
-        with open(args.textfile, "r", encoding="utf-8") as tf:
-            gif_text = tf.read()
+        if args.textfile == "-":
+            gif_text = sys.stdin.read()
+        else:
+            with open(args.textfile, "r", encoding="utf-8") as tf:
+                gif_text = tf.read()
     gif_text = " ".join(gif_text.split("\n")).strip()
 
     if args.scrollspeed <= 0:
