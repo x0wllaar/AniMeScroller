@@ -31,33 +31,32 @@ def main():
                         required=False,
                         type=int,
                         default=40)
-    parser.add_argument("--scrollspeedp",
-                        help="Scroll speed in pixels per second",
+    speedg = parser.add_argument_group(title="Control scrolling speed or time")
+    speedg.add_argument("--scrollspeedtype", 
+                        help="The type of scrolling speed control to use",
                         required=False,
-                        type=int,
-                        default=-1)
-    parser.add_argument("--scrollspeedc",
-                        help="Scroll speed in characters per second",
+                        type=str,
+                        choices=["pixelpersecond", "charpersecond", "second"],
+                        default="charpersecond")
+    speedg.add_argument("--scrollspeed",
+                        help="Scroll speed or time in units specifed by --scrollspeedtype",
                         required=False,
                         type=int,
                         default=6)
-    parser.add_argument("--scrolltime",
-                        help="Time (in seconds) for which to scroll the text",
-                        required=False,
-                        type=float,
-                        default=-1)
     parser.add_argument("--vmarginsize",
                         help="Vertical margin size (in pixels)",
                         required=False,
                         type=int,
                         default=5)
-    parser.add_argument("--windowwidthp",
-                        help="Width (in pixels) of the generated GIF",
+    widthg = parser.add_argument_group(title="Control the width of the generated GIF")
+    widthg.add_argument("--windowwidthunit",
+                        help="The unit of window width",
                         required=False,
-                        type=int,
-                        default=-1)
-    parser.add_argument("--windowwidthc",
-                        help="Width (in charachets) of the generated GIF",
+                        type=str,
+                        choices=["character", "pixel"],
+                        default="character")
+    widthg.add_argument("--windowwidth",
+                        help="Width (in units specified by --windowwidthunit) of the generated GIF",
                         required=False,
                         type=int,
                         default=4)
@@ -68,15 +67,10 @@ def main():
                         default=0)
     args = parser.parse_args()
 
-    if args.scrollspeedp < 0 and args.scrolltime < 0 and args.scrollspeedc < 0:
-        die("Either scroll speed in pixels / characters or scroll time should be set to a value >0")
-    if int(args.scrollspeedp > 0) + int(args.scrolltime > 0) + int(args.scrollspeedc > 0) > 1:
-        die("Only one of scroll time or scroll speed in pixels / characters can be set to value >0")
-
-    if args.windowwidthp < 0 and args.windowwidthc < 0:
-        die("Either window width in pixels or in characters should be set to a value >0")
-    if args.windowwidthp > 0 and args.windowwidthc > 0:
-        die("Only one of window width in pixels or in characters can be set to value >0")
+    if args.scrollspeed <= 0:
+        die("Cannot set scroll speed or time to be less or equal to zero")
+    if args.windowwidth <= 0:
+        die("Cannot set window width to be less or equal to zero")
 
     # Get text height for current font size with FFmpeg magic
     # https://stackoverflow.com/a/63448868
@@ -115,22 +109,22 @@ def main():
     text_width = float(width_process.stderr.decode("utf-8").strip())
 
     gif_height = 2 * args.vmarginsize + math.ceil(text_height)
-    if args.windowwidthp > 0:
-        gif_width = args.windowwidthp
-    elif args.windowwidthc > 0:
-        gif_width = args.windowwidthc * text_width / len(args.text)
+    if args.windowwidthunit == "pixel":
+        gif_width = args.windowwidth
+    elif args.windowwidthunit == "character":
+        gif_width = args.windowwidth * text_width / len(args.text)
         gif_width = math.ceil(gif_width)
     else:
         die("Impossible combination of width args")
 
-    if args.scrolltime > 0:
-        gif_time = args.scrolltime
-        gif_speed = (text_width + gif_width) / args.scrolltime
-    elif args.scrollspeedp > 0:
+    if args.scrollspeedtype == "second":
+        gif_time = args.scrollspeed
+        gif_speed = (text_width + gif_width) / args.scrollspeed
+    elif args.scrollspeedtype == "pixelpersecond":
         gif_time = (text_width + gif_width) / args.scrollspeed
         gif_speed = args.scrollspeed
-    elif args.scrollspeedc > 0:
-        gif_speed = args.scrollspeedc * text_width / len(args.text)
+    elif args.scrollspeedtype == "charpersecond":
+        gif_speed = args.scrollspeed * text_width / len(args.text)
         gif_time = (text_width + gif_width) / gif_speed
     else:
         die("Impossible combination of time/speed args")
