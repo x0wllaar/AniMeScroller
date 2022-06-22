@@ -6,6 +6,11 @@ import subprocess
 import argparse
 import math
 import tempfile
+import pickle
+
+import zmq
+
+from utils import GifData, PICKLE_PROTOCOL_VERSION
 
 DEFAULT_FONT_NAME = "./NotoSansMono-SemiBold.ttf"
 # This is a cluge to refer to files relative to the script
@@ -72,9 +77,11 @@ def main():
                         help="Text to scroll")
     srcg.add_argument("--textfile",
                         help="File from which to get the text to scroll (pass - to read from stdin)")
-    parser.add_argument("-o", "--output",
-                        help="Name of the output file (pass - to write to stdout)",
-                        required=True)
+    outg = parser.add_mutually_exclusive_group(required=True)
+    outg.add_argument("-o", "--output",
+                        help="Name of the output file (pass - to write to stdout)")
+    outg.add_argument("--socket", 
+                        help="ZMQ PULL socket of GIF playback server")
     parser.add_argument("--font",
                         help="Font to use",
                         required=False,
@@ -118,6 +125,11 @@ def main():
                         required=False,
                         type=float,
                         default=0)
+    parser.add_argument("--loops",
+                        help="When sending GIF to a server, for how many loops to play it",
+                        required=False,
+                        type=int,
+                        default=1)
     args = parser.parse_args()
 
     if args.text is not None:
@@ -134,6 +146,8 @@ def main():
         die("Cannot set scroll speed or time to be less or equal to zero")
     if args.windowwidth <= 0:
         die("Cannot set window width to be less or equal to zero")
+    if args.loops < 1:
+        die("Refusing to send infinite or negative loops to server")
 
 
     text_height = get_text_size_info(
@@ -182,11 +196,20 @@ def main():
         fontsize=args.fontsize,
         vmarginsize=args.vmarginsize,
     )
-    if args.output == "-":
-        sys.stdout.buffer.write(gif_bytes)
-    else:
-        with open(args.output, "wb") as giff:
-            giff.write(gif_bytes)
+    if args.output is not None:
+        if args.output == "-":
+            sys.stdout.buffer.write(gif_bytes)
+        else:
+            with open(args.output, "wb") as giff:
+                giff.write(gif_bytes)
+    elif args.socket is not None:
+        g_data = GifData(nloops=args.loops, gif_bytes=gif_bytes)
+        ctx = zmq.Context.instance()
+        g_socket = ctx.socket(zmq.PUSH)
+        g_socket.connect(args.socket)
+
+        pickle_gif_bytes = pickle.dumps(g_data, protocol=PICKLE_PROTOCOL_VERSION)
+        g_socket.send(pickle_gif_bytes)
 
 
 if __name__ == "__main__":
