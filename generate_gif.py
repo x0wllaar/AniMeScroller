@@ -14,6 +14,46 @@ def die(*args, **kwargs):
     print("ERROR:", *args, file=sys.stderr, **kwargs)
     exit(1)
 
+# Get text height or width for current font size with FFmpeg magic
+# https://stackoverflow.com/a/63448868
+def get_text_size_info(info_type:str, text:str, font:str, fontsize:int) -> float:
+    allowed_types = {"width", "height"}
+    if info_type not in allowed_types:
+        raise ValueError("Bad info_type argument")
+    ffmpeg_info_type = "tw" if info_type == "width" else "th"
+    info_process = subprocess.run([
+        "ffmpeg",
+        "-v", "24",
+        "-hide_banner",
+        "-f", "lavfi",
+        "-i", "color",
+        "-vf",
+        f"drawtext='{font}':fontsize={fontsize}:text='{text}':x=W/2:y=print({ffmpeg_info_type}\,24)",
+        "-vframes", "1",
+        "-f", "null", "-"
+    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if info_process.returncode != 0:
+        raise RuntimeError(f"FFmpeg error when getting info {info_type}, code {info_process.returncode}")
+    text_info = float(info_process.stderr.decode("utf-8").strip())
+    return text_info
+
+def generate_gif(gif_width:int, gif_height:int, gif_time:float, 
+                 gif_speed:float, text:str, font:str, fontsize:int,
+                 vmarginsize:int, output:str):
+    gif_process = subprocess.run([
+        "ffmpeg",
+        "-y",
+        "-t", str(gif_time),
+        "-f", "lavfi",
+        "-i", f"color=c=black:s={gif_width}x{gif_height}:r=25/1",
+        "-vf",
+        f"drawtext='{font}':fontsize={fontsize}:text='{text}':y={vmarginsize}:x=w-t*{gif_speed}:fontcolor=white",
+        output
+    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if gif_process.returncode != 0:
+        raise RuntimeError(f"FFmpeg exited with error status {gif_process.returncode} when creating GIF" + 
+            f"FFmpeg output:" + gif_process.stderr.decode("utf-8").strip())
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--text",
@@ -72,41 +112,20 @@ def main():
     if args.windowwidth <= 0:
         die("Cannot set window width to be less or equal to zero")
 
-    # Get text height for current font size with FFmpeg magic
-    # https://stackoverflow.com/a/63448868
-    height_process = subprocess.run([
-        "ffmpeg",
-        "-v", "24",
-        "-hide_banner",
-        "-f", "lavfi",
-        "-i", "color",
-        "-vf",
-        f"drawtext='{args.font}':fontsize={args.fontsize}:text='{args.text}':x=W/2:y=print(th\,24)",
-        "-vframes", "1",
-        "-f", "null", "-"
-    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    if height_process.returncode != 0:
-        die("FFmpeg error when getting height, code",
-            height_process.returncode)
-    text_height = float(height_process.stderr.decode("utf-8").strip())
 
-    # Get text width for current font size with FFmpeg magic
-    # https://stackoverflow.com/a/63448868
-    width_process = subprocess.run([
-        "ffmpeg",
-        "-v", "24",
-        "-hide_banner",
-        "-f", "lavfi",
-        "-i", "color",
-        "-vf",
-        f"drawtext='{args.font}':fontsize={args.fontsize}:text='{args.text}':x=W/2:y=print(tw\,24)",
-        "-vframes", "1",
-        "-f", "null", "-"
-    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    if width_process.returncode != 0:
-        die("FFmpeg error when getting width, code",
-            width_process.returncode)
-    text_width = float(width_process.stderr.decode("utf-8").strip())
+    text_height = get_text_size_info(
+        info_type="height",
+        text=args.text,
+        font=args.font,
+        fontsize=args.fontsize
+    )
+
+    text_width = get_text_size_info(
+        info_type="width",
+        text=args.text,
+        font=args.font,
+        fontsize=args.fontsize
+    )
 
     gif_height = 2 * args.vmarginsize + math.ceil(text_height)
     if args.windowwidthunit == "pixel":
@@ -130,20 +149,17 @@ def main():
         die("Impossible combination of time/speed args")
     gif_time += args.delayafter
 
-    gif_process = subprocess.run([
-        "ffmpeg",
-        "-y",
-        "-t", str(gif_time),
-        "-f", "lavfi",
-        "-i", f"color=c=black:s={gif_width}x{gif_height}:r=25/1",
-        "-vf",
-        f"drawtext='{args.font}':fontsize={args.fontsize}:text='{args.text}':y={args.vmarginsize}:x=w-t*{gif_speed}:fontcolor=white",
-        args.output
-    ], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    if gif_process.returncode != 0:
-        die("FFmpeg exited with error status", gif_process.returncode,
-            "when creating GIF,",
-            "FFmpeg output:", gif_process.stderr.decode("utf-8").strip())
+    generate_gif(
+        gif_width=gif_width,
+        gif_height=gif_height,
+        gif_time=gif_time,
+        gif_speed=gif_speed,
+        text=args.text,
+        font=args.font,
+        fontsize=args.fontsize,
+        vmarginsize=args.vmarginsize,
+        output=args.output
+    )
 
 
 if __name__ == "__main__":
