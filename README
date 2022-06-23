@@ -15,6 +15,9 @@ Simply clone this repository
 
 
 ===USAGE===
+There are essentially two ways to use this program. The first is to generate a
+GIF, then play it manually via asusctl:
+
 1. Generate a GIF animation of your text with
    $ ./generate_gif.py -t "Lorem Ipsum" -o scroll.gif
 2. Play the generated GIF on the AniMe Matrix
@@ -26,8 +29,28 @@ matrix to the off state by first generating a solid black image:
 And then sending this image to the matrix
    $ asusctl anime image -p blank.png
 
+The second is to use the GIF playback server and send the gif to it for 
+playback:
+
+1. Start the server with
+   $ ./gif_playback_server.py --socket "ipc:///tmp/anime_gif_sock"
+2. Send GIFs to the server for playback
+   $ ./generate_gif.py -t "Lorem Ipsum" --socket "ipc:///tmp/anime_gif_sock"
+
+The second way allows for a degree of automation because the server will
+multiplex the access to the AniMe matrix based on a priority queue, and
+because the received GIFs are played automatically. This allows for commands 
+like
+   $ curl -s "wttr.in/New%20York?format=%l:+%C+%t\n" | ./generate_gif.py \
+     --textfile - --loops 3 --socket "ipc:///tmp/anime_gif_sock"
+which will automatically get the current weather in NY and display it on the 
+matrix.
+
+Please note that the server relies on ZeroMQ and Pickle, which
+in theory, give anyone with access to the socket an ability to run
+arbitrary python code in the context of the server. The correct thing
+to do here is to run the server with limited access to stuff with e.g.
+bubblewrap.
 
 ===TODO===
 * Add the ability to reverse scrolling direction for e.g. Hebrew texts
-* Add a separate "server" that can process incoming GIFs and automatically
-  run asusctl to show them
