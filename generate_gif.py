@@ -126,6 +126,11 @@ def main():
                         required=False,
                         type=int,
                         default=1)
+    parser.add_argument("--gifpriority",
+                        help="GIF playback priority on server (lower is bigger priority)",
+                        required=False,
+                        type=int,
+                        default=127)
     args = parser.parse_args()
 
     if args.text is not None:
@@ -199,7 +204,7 @@ def main():
             with open(args.output, "wb") as giff:
                 giff.write(gif_bytes)
     elif args.socket is not None:
-        g_data = GifData(nloops=args.loops, gif_bytes=gif_bytes)
+        g_data = GifData(nloops=args.loops, gif_bytes=gif_bytes, priority=args.gifpriority)
         ctx = zmq.Context.instance()
         g_socket = ctx.socket(zmq.PUSH)
         g_socket.connect(args.socket)

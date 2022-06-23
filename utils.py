@@ -3,7 +3,7 @@ from collections import namedtuple
 
 PICKLE_PROTOCOL_VERSION = 5
 
-GifData = namedtuple("GifData", ["nloops", "gif_bytes"])
+GifData = namedtuple("GifData", ["nloops", "gif_bytes", "priority"])
 
 def die(*args, **kwargs):
     print("ERROR:", *args, file=sys.stderr, **kwargs)
