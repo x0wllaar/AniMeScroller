@@ -23,6 +23,14 @@ GIF, then play it manually via asusctl:
 2. Play the generated GIF on the AniMe Matrix
    $ asusctl anime gif -p scroll.gif -l 0
 
+Automating above processes has been done in a cpp script give.
+To compile it according to your system, do the following
+
+1. Use g++ to complie
+   $ g++ automate.cpp -o automate
+2. Run the script whenever you want to display any text
+   $ ./automate
+
 If the image persists when you stop playback with Ctrl+C, you can reset the
 matrix to the off state by first generating a solid black image:
    $ ffmpeg -t 10 -f lavfi -i color=c=black:s=100x50 -frames:v 1 blank.png
